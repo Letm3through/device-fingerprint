@@ -1,5 +1,7 @@
 import os
 import pandas as pd
+import features_extraction
+import numpy as np
 
 # Constant to declare for the parameters for the sliding window
 WINDOW_SIZE = 8
@@ -32,13 +34,21 @@ for phone in os.listdir(data_dir):
 
 
 # Setting up to traverse through CSV files to extract features
+data_segments = []
 for folder in os.listdir(data_dir):
     vibrated_folder = os.path.abspath(os.path.join(data_dir, folder, "vibrated", "50hz"))
     list_of_csv = os.listdir(vibrated_folder)
     for csv in list_of_csv:
         csv_path = os.path.join(vibrated_folder, csv)
         data_segments = create_window(csv_path)
-        label = folder
+
+
+features = []
+for i in data_segments:
+    features.append(features_extraction.extract_features(i))
+
+print(features)
+
 
 
 

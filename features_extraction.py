@@ -32,3 +32,6 @@ def stddev(window):
     return std_dev
 
 
+def extract_features(window):
+    features = [minimum(window), maximum(window), stddev(window)]
+    return features
