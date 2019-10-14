@@ -45,7 +45,7 @@ for folder in os.listdir(data_dir):
 
 features = []
 for i in data_segments:
-    features.append(features_extraction.extract_features(i))
+    features.extend(features_extraction.extract_features(i))
 
 print(features)
 
