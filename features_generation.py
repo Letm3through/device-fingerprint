@@ -3,28 +3,30 @@ import pandas as pd
 import features_extraction
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
 
 # Constant to declare for the parameters for the sliding window
-WINDOW_SIZE = 128
-STEP = 32
+WINDOW_SIZE = 64
+STEP = 52
 
 
-# # Data path should arrive in the format of <phone>/<vibrated>/<frequency>/<.csv> file
-# def create_segments(data_path):
-#     columns = ["x", "y", "z"]
-#     df = pd.read_csv(data_path, usecols=[1, 2, 3], header=None)
-#     # Assigning columns to the data set
-#     df.columns = columns
-#
-#     data_readings = df.values
-#     num_rows = len(data_readings)
-#     all_window = []
-#
-#     for start in range(0, num_rows - WINDOW_SIZE, STEP):
-#         window = data_readings[start:start + WINDOW_SIZE]
-#         all_window.append(window)
-#
-#     return all_window
+# Data path should arrive in the format of <phone>/<vibrated>/<frequency>/<.csv> file
+def create_windows(data_path):
+    columns = ["x", "y", "z"]
+    df = pd.read_csv(data_path, usecols=[1, 2, 3], header=None)
+    # Assigning columns to the data set
+    df.columns = columns
+
+    data_readings = df.values
+    num_rows = len(data_readings)
+    all_window = []
+
+    for start in range(0, num_rows - WINDOW_SIZE, STEP):
+        window = data_readings[start:start + WINDOW_SIZE]
+        all_window.append(window)
+
+    return all_window
 
 
 def create_segments(data_path):
@@ -32,12 +34,14 @@ def create_segments(data_path):
     df = pd.read_csv(data_path, usecols=[1, 2, 3], header=None)
     # Assigning columns to the data set
     df.columns = columns
-    data_readings = df.values
-    num_rows = len(data_readings)
+    # Normalizing the raw data
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(df.values)
+    num_rows = len(scaled_data)
     all_segments = []
 
     for start in range(0, num_rows - WINDOW_SIZE, WINDOW_SIZE):
-        segment = data_readings[start:start+WINDOW_SIZE]
+        segment = scaled_data[start:start+WINDOW_SIZE]
         all_segments.append(segment)
 
     return all_segments
@@ -48,6 +52,7 @@ phone_list = []
 data_dir = os.path.abspath("./data")
 for phone in os.listdir(data_dir):
     phone_list.append(phone)
+
 
 columns = ['min_x', 'min_y', 'min_z', 'min_rss', 'max_x', 'max_y', 'max_z', 'max_rss', 'std_x', 'std_y', 'std_z',
            'std_rss', 'mean_x', 'mean_y', 'mean_z', 'mean_rss', 'phone']
@@ -70,23 +75,49 @@ for folder in os.listdir(data_dir):
             features_csv = features_extraction.extract_features(i)
             label = str(folder)
             features_csv.append(label)
-            print(list(features_csv))
             main_df = main_df.append(pd.Series(features_csv, index=main_df.columns), ignore_index=True)
 
 # Export to CSV for machine learning
 main_df.to_csv("./features.csv")
 
+######################################################################################################
+# TEST DATA #
+######################################################################################################
+test_df = pd.DataFrame(columns=columns)
+test_dir = os.path.abspath("./test_data")
+
+for csv in os.listdir(test_dir):
+    csv_path = os.path.join(test_dir, csv)
+
+    # Making the entire CSV file return a list of list of segments
+    data_segments = create_segments(csv_path)
+    # For each segment, i extract the features
+    for i in data_segments:
+        features_csv = []
+        features_csv = features_extraction.extract_features(i)
+        if "s5" in csv:
+            label = "s5"
+        else:
+            label = "blue_huawei"
+
+        features_csv.append(label)
+        test_df = test_df.append(pd.Series(features_csv, index=test_df.columns), ignore_index=True)
+
+# Export to CSV for machine learning
+test_df.to_csv("./testtest.csv")
+
+
 # ##################################################################
 # # For graph plotting and visualization purposes
 # ##################################################################
 #
-# data = "C:\\Users\\User\\Desktop\\gyroscope_ml\\data\\black_huawei\\gyro_100hz_14102019_143558.csv"
+# data = "D:\\Y4S1\\CS4276\\device-fingerprint\\data\\black_huawei\\gyro_100hz_14102019_143558.csv"
 # # data = "D:\\Y4S1\\CS4276\\device-fingerprint\\data\\htc_u11\\gyro_100hz_16102019_205643.csv"
 # # # data = "D:\\Y4S1\\CS4276\\device-fingerprint\\data\\mi_max\\gyro_100hz_14102019_212145.csv"
-# data1 = "C:\\Users\\User\\Desktop\\gyroscope_ml\\data\\mi_max\\gyro_100hz_14102019_211936.csv"
+# data1 = "D:\\Y4S1\\CS4276\\device-fingerprint\\data\\black_huawei\\gyro_100hz_14102019_143651.csv"
 # #
 # name1 ="black_huawei"
-# name2 ="mi_max"
+# name2 ="black_huawei"
 # #
 # #
 # # # For Black huawei
@@ -126,7 +157,7 @@ main_df.to_csv("./features.csv")
 #         os.mkdir("./" + name1 + "_" + name2)
 #     plt.savefig("./" + name1 + "_" + name2 + "/" + str(j) + name1 + "_" + name2 + '.png')
 #     plt.clf()
-
+#
 
 
 
